@@ -1,0 +1,79 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHT.h>
+
+// OLED Display Settings 
+#define SCREEN_WIDTH 128 
+#define SCREEN_HEIGHT 64 
+#define OLED_RESET 4 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// DHT22 Settings
+#define DHTPIN 2       // Connect DHT22 Data pin to Digital Pin 2
+#define DHTTYPE DHT22  
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Initialize DHT sensor
+  dht.begin();
+
+  // Initialize OLED (Retained from your program)
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); 
+  }
+  
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.display();
+}
+
+void loop() {
+  // DHT22 requires a 2-second delay between readings for accuracy
+  delay(2000);
+
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature(); // Celsius
+
+  // Error handling: if sensor is disconnected or failing
+  if (isnan(humidity) || isnan(temperature)) {
+    display.clearDisplay();
+    display.setCursor(0, 10);
+    display.setTextSize(1);
+    display.println("Sensor Error!");
+    display.display();
+    return;
+  }
+
+  // Update Display
+  display.clearDisplay();
+
+  // Draw a simple border for a technical look
+  display.drawRect(0, 0, 128, 64, WHITE);
+
+  // Temperature Display
+  display.setTextSize(1);
+  display.setCursor(10, 10);
+  display.print("TEMPERATURE");
+  
+  display.setTextSize(2);
+  display.setCursor(10, 22);
+  display.print(temperature, 1); // 1 decimal place
+  display.print(" C");
+
+  // Humidity Display
+  display.setTextSize(1);
+  display.setCursor(10, 42);
+  display.print("HUMIDITY");
+
+  display.setTextSize(2);
+  display.setCursor(10, 52);
+  display.print(humidity, 1);
+  display.print(" %");
+
+  display.display();
+}
